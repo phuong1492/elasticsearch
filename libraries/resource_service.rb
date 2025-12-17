@@ -18,7 +18,11 @@ class ElasticsearchCookbook::ServiceResource < Chef::Resource::LWRPBase
   # service actions
   attribute(:service_actions, kind_of: [Symbol, Array], default: [:enable].freeze)
 
-  # allow overridable init script
+  # allow overridable systemd unit file
+  attribute(:systemd_source, kind_of: String, default: 'systemd_unit.erb')
+  attribute(:systemd_cookbook, kind_of: String, default: 'elasticsearch')
+  
+  # legacy init script support (deprecated)
   attribute(:init_source, kind_of: String, default: 'initscript.erb')
   attribute(:init_cookbook, kind_of: String, default: 'elasticsearch')
 end

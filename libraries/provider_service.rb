@@ -26,21 +26,39 @@ class ElasticsearchCookbook::ServiceProvider < Chef::Provider::LWRPBase
     d_r.run_action(:create)
     new_resource.updated_by_last_action(true) if d_r.updated_by_last_action?
 
-    # Create service
+    # Create systemd unit file
     #
-    init_r = template "/etc/init.d/#{new_resource.service_name}" do
-      source new_resource.init_source
-      cookbook new_resource.init_cookbook
+    systemd_unit_r = template "/etc/systemd/system/#{new_resource.service_name}.service" do
+      source new_resource.systemd_source
+      cookbook new_resource.systemd_cookbook
       owner 'root'
-      mode 0755
+      group 'root'
+      mode '0644'
       variables(
-        # we need to include something about #{progname} fixed in here.
-        program_name: new_resource.service_name
+        program_name: new_resource.service_name,
+        path_home: es_conf.path_home[es_install.type],
+        path_conf: es_conf.path_conf[es_install.type],
+        path_data: es_conf.path_data[es_install.type],
+        path_logs: es_conf.path_logs[es_install.type],
+        path_pid: es_conf.path_pid[es_install.type],
+        es_user: es_user.username,
+        es_group: es_user.groupname,
+        default_dir: '/etc/sysconfig'
       )
       action :nothing
     end
-    init_r.run_action(:create)
-    new_resource.updated_by_last_action(true) if init_r.updated_by_last_action?
+    systemd_unit_r.run_action(:create)
+    new_resource.updated_by_last_action(true) if systemd_unit_r.updated_by_last_action?
+
+    # Reload systemd daemon
+    #
+    if systemd_unit_r.updated_by_last_action?
+      reload_r = execute 'systemctl-daemon-reload' do
+        command 'systemctl daemon-reload'
+        action :nothing
+      end
+      reload_r.run_action(:run)
+    end
 
     # flatten in an array here, in case the service_actions are a symbol vs. array
     [new_resource.service_actions].flatten.each do |act|

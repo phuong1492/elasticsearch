@@ -1,22 +1,31 @@
 [Unit]
-Description=Elasticsearch
+Description=Elasticsearch - <%= @program_name %>
 Documentation=http://www.elastic.co
 Wants=network-online.target
 After=network-online.target
 
 [Service]
-RuntimeDirectory=elasticsearch
-Environment=ES_HOME=/usr/share/elasticsearch
-Environment=ES_PATH_CONF=/etc/elasticsearch
-Environment=PID_DIR=/var/run/elasticsearch
+RuntimeDirectory=<%= @program_name %>
+Environment=ES_HOME=<%= @path_home %>
+Environment=ES_PATH_CONF=<%= @path_conf || '/etc/elasticsearch' %>
+Environment=PID_DIR=<%= @path_pid || '/var/run/elasticsearch' %>
+
+# Load environment variables from sysconfig file
+# This file can contain: ES_HEAP_SIZE, ES_HEAP_NEWSIZE, ES_DIRECT_SIZE,
+# ES_JAVA_OPTS, ES_GC_LOG_FILE, ES_STARTUP_SLEEP_TIME, JAVA_HOME, ES_INCLUDE
+# The "-" prefix means the file is optional (won't fail if missing)
 EnvironmentFile=-<%= @default_dir %>/<%= @program_name %>
 
 WorkingDirectory=<%= @path_home %>
 
-User=elasticsearch
-Group=elasticsearch
+User=<%= @es_user || 'elasticsearch' %>
+Group=<%= @es_group || 'elasticsearch' %>
 
-ExecStart=<%= @path_home %>/bin/elasticsearch -p ${PID_DIR}/elasticsearch.pid --quiet
+ExecStart=<%= @path_home %>/bin/elasticsearch -p ${PID_DIR}/<%= @program_name %>.pid \
+        -Des.path.conf=<%= @path_conf %> \
+        -Des.default.path.home=<%= @path_home %> \
+        -Des.default.path.logs=<%= @path_logs %> \
+        -Des.default.path.data=<%= @path_data %>
 
 # StandardOutput is configured to redirect to journalctl since
 # some error messages may be logged in standard output before
