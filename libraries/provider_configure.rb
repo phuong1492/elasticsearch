@@ -39,6 +39,7 @@ class ElasticsearchCookbook::ConfigureProvider < Chef::Provider::LWRPBase
     # Create ES directories
     #
     [new_resource.path_conf[es_install.type], "#{new_resource.path_conf[es_install.type]}/scripts", new_resource.path_logs[es_install.type]].each do |path|
+      Chef::Log.info("Creating directory #{path}")
       d = directory path do
         owner es_user.username
         group es_user.groupname
